@@ -150,24 +150,66 @@ When `-Recursive` is used, a folder tree is printed at the top of the file. A su
 
 ## Troubleshooting
 
-- **"Running scripts is disabled on this system"**  
-  PowerShell's execution policy is blocking the script. Allow local scripts with:
+### "Running scripts is disabled on this system"
+PowerShell's default execution policy blocks script execution. Allow locally stored scripts to run on your current user account by executing:
+```powershell
+Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned -Force
+```
+
+### "Error: This Script is not digitally signed..."
+Windows restricts the execution of unverified scripts to protect your environment. Choose one of the following methods to resolve this issue:
+
+#### Method 1: Permanent Code Signing (Recommended)
+Digitally sign the script using a local certificate to run it securely without lowering system-wide protections:
+1. Open PowerShell as an **Administrator**.
+2. Create and trust a local self-signed certificate:
+   ```powershell
+   \$cert = New-SelfSignedCertificate -Type CodeSigningCert -Subject "CN=LocalScriptSigning" -CertStoreLocation Cert:\CurrentUser\My
+   \$rootStore = [System.Security.Cryptography.X509Certificates.X509Store]::new("Root", "CurrentUser")
+   \$rootStore.Open("ReadWrite")
+   \$rootStore.Add(\(cert)\)rootStore.Close()
+   ```
+3. Apply the signature directly to your script file:
+   ```powershell
+   Set-AuthenticodeSignature -FilePath "\(env:USERPROFILE\Scripts\combdir.ps1" -Certificate \)cert
+   ```
+
+> [!TIP]
+> If you manually modify the contents of `combdir.ps1` in the future, you must re-run Step 3 to re-apply the signature.
+
+#### Method 2: Temporary Bypass
+Bypass execution restrictions for a single terminal session without changing system states:
+```powershell
+powershell.exe -ExecutionPolicy Bypass -File "\$env:USERPROFILE\Scripts\combdir.ps1"
+```
+
+---
+
+### Output file is too large for AI context windows
+Aggressively filter out unnecessary data by combining strict exclusions:
+```powershell
+combdir . -GitIgnore -MaxFilesPerFolder 10 -IgnoreBinary -MaxFileSize 200 -r
+```
+> [!NOTE]
+> Review the terminal skip summary after execution. It displays exactly which file categories or directories consumed the most space.
+
+---
+
+### A folder I want is being entirely skipped
+The `-MaxFilesPerFolder` flag drops an **entire folder** if its file count crosses your limit. 
+* **Fix**: Omit `-MaxFilesPerFolder` and use target-specific exclusions instead:
   ```powershell
-  Set-ExecutionPolicy -Scope CurrentUser RemoteSigned
+  combdir . -SkipFolders "ui,icons,assets" -r
   ```
 
-- **Output is still too large**  
-  Try combining several flags:
-  ```powershell
-  combdir . -GitIgnore -MaxFilesPerFolder 10 -IgnoreBinary -MaxFileSize 200 -r
-  ```
-  The skip summary printed to the console will show exactly which categories contributed the most files so you can target them.
+---
 
-- **A folder I want is being skipped by `-MaxFilesPerFolder`**  
-  That flag drops the entire folder if it exceeds the threshold. Use `-SkipFolders` to target specific folder names instead, which gives you more precise control.
+### `.gitignore` patterns are not working as expected
+The internal parsing engine supports standard rules but features two known limitations:
+* **Negation rules**: Patterns using the `!` prefix (e.g., `!important.log`) are ignored.
+* **Root-relative paths**: Leading slashes (e.g., `/docs`) might match unpredictably depending on your working directory.
+* **Fix**: Pass explicit exclusions using the manual `-Exclude` or `-SkipFolders` parameters to guarantee coverage.
 
-- **`.gitignore` patterns are not working as expected**  
-  The `-GitIgnore` flag supports most common patterns but has two known limitations: negation patterns (`!`) are silently ignored, and `**` is treated as a single-level wildcard (`*`) rather than matching any depth. For most projects this is not an issue, but deeply nested build output folders may slip through.
 
 ---
 

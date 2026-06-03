@@ -34,8 +34,8 @@ Restart your terminal after running the above.
 
 To use the script from any folder on your system, follow these steps:
 
-1. **Download the script**: [combdir.ps1](https://raw.githubusercontent.com/himanshubalani/combdir/main/combdir.ps1)
-2. **Move the script**: Place it in a directory of your choice (e.g., `C:\Users\<YourUsername>\Scripts`)
+1. **Download the script from Releases**: [combdir.ps1](https://github.com/himanshubalani/combdir/releases) or from the [codebase](https://raw.githubusercontent.com/himanshubalani/combdir/main/combdir.ps1)
+2. **Move the script**: Place it in a directory of your choice (e.g., `C:\Users\<YourUsername>\Scripts`) . Remember this address for later.
 3. **Add the directory to your PATH**: This allows you to run `combdir` from any terminal window. (see [Environment Variables](https://learn.microsoft.com/en-us/previous-versions/office/developer/sharepoint-2010/ee537574(v=office.14)))
     - Press Win + S and search for "Environment Variables"
     - Click "Edit the system environment variables"

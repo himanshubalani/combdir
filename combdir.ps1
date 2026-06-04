@@ -166,6 +166,7 @@ function Get-LanguageFromExtension {
         '.proto'  = 'protobuf'
         '.tf'     = 'hcl'
         '.prisma' = 'prisma'
+        '.txt'    = 'Plain Text'
     }
     if ($map.ContainsKey($ext)) { return $map[$ext] }
     return ''
@@ -532,8 +533,11 @@ Write-Progress -Activity "Combining Files" -Completed
 
 # ─── Summary ─────────────────────────────────────────────────────────────────
 
-$estimatedTokens = [math]::Round($totalChars / 4)
-$tokenDisplay    = if ($estimatedTokens -ge 1000) { "$([math]::Round($estimatedTokens / 1000, 1))k" } else { "$estimatedTokens" }
+$estimatedTokensMin = [math]::Round($totalChars / 3.5)
+$estimatedTokensMax = [math]::Round($totalChars / 2.6)
+
+$tokenDisplayMin = if ($estimatedTokensMin -ge 1000) { "$([math]::Round($estimatedTokensMin / 1000, 1))k" } else { "$estimatedTokensMin" }
+$tokenDisplayMax = if ($estimatedTokensMax -ge 1000) { "$([math]::Round($estimatedTokensMax / 1000, 1))k" } else { "$estimatedTokensMax" }
 $outputSizeKB    = [math]::Round((Get-Item $Output).Length / 1KB, 2)
 
 if (-not $Plain) {
@@ -547,7 +551,7 @@ if (-not $Plain) {
 |---|---|
 | Files Processed | $counter |
 | Files Skipped/Errors | $skipped |
-| Estimated Tokens | ~$tokenDisplay |
+| Estimated Tokens | $tokenDisplayMin to $tokenDisplayMax |
 | Output File | $Output |
 | Output Size | $outputSizeKB KB |
 "@
@@ -559,7 +563,7 @@ SUMMARY
 ----------
 Total Files Processed: $counter
 Files Skipped/Errors:  $skipped
-Estimated Tokens:      ~$tokenDisplay
+Estimated Tokens:      $tokenDisplayMin to $tokenDisplayMax
 Output File:           $Output
 Output Size:           $outputSizeKB KB
 ----------
